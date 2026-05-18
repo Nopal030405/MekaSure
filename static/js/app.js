@@ -56,31 +56,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const formEditSurat = document.getElementById('form-edit-surat');
     const btnCancelEdit = document.getElementById('btn-cancel-edit');
 
-    // Initialize data from LocalStorage
-    let suratData = JSON.parse(localStorage.getItem('suratData')) || [];
+    // Initialize backend-driven data array
+    let suratData = [];
 
-    // Helper: Generate Nomor Surat
-    // Format Baku: XX/YY/ZZ/[Panpel(nama kegiatan)]/HIMAMEKA/KM-UTM/Bulan/Tahun
-    const generateNomorSurat = (lingkup, jenis, isKepanitiaan, namaKegiatan, tanggalStr) => {
-        const count = suratData.length + 1;
-        const paddedCount = String(count).padStart(3, '0');
-        
-        const dateObj = new Date(tanggalStr);
-        const year = dateObj.getFullYear();
-        const month = dateObj.getMonth() + 1; // 1-12
-        
-        const romawiMonths = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII"];
-        const romawi = romawiMonths[month - 1];
-
-        // Panpel part
-        let panpelPart = "";
-        if (isKepanitiaan) {
-            // Remove spaces from nama kegiatan
-            const cleanedNama = namaKegiatan.replace(/\s+/g, '');
-            panpelPart = `/Panpel${cleanedNama}`;
+    // Load Letters from Server
+    const loadLetters = async () => {
+        try {
+            const res = await fetch('/api/letters');
+            suratData = await res.json();
+            filterTable();
+        } catch (err) {
+            console.error("Gagal memuat data surat dari server:", err);
         }
-
-        return `${paddedCount}/${lingkup}/${jenis}${panpelPart}/HIMAMEKA/KM-UTM/${romawi}/${year}`;
     };
 
     // Helper: Render Table
@@ -90,9 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
             emptyState.classList.remove('hidden');
         } else {
             emptyState.classList.add('hidden');
-            dataToRender.forEach((surat, index) => {
-                // Find actual index in suratData to ensure edit/delete works on filtered data
-                const actualIndex = suratData.indexOf(surat);
+            dataToRender.forEach((surat) => {
                 const kepanitiaanDisplay = surat.isKepanitiaan ? surat.namaKegiatan : '-';
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
@@ -104,8 +89,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     <td>${surat.perihal}</td>
                     <td class="admin-only">
                         <div style="display: flex; gap: 5px;">
-                            <button class="btn btn-blue" style="padding: 5px 10px; font-size: 0.8rem;" onclick="editSurat(${actualIndex})">Edit</button>
-                            <button class="btn btn-yellow" style="padding: 5px 10px; font-size: 0.8rem;" onclick="hapusSurat(${actualIndex})">Hapus</button>
+                            <button class="btn btn-blue" style="padding: 5px 10px; font-size: 0.8rem;" onclick="editSurat(${surat.id})">Edit</button>
+                            <button class="btn btn-yellow" style="padding: 5px 10px; font-size: 0.8rem;" onclick="hapusSurat(${surat.id})">Hapus</button>
                         </div>
                     </td>
                 `;
@@ -132,18 +117,28 @@ document.addEventListener('DOMContentLoaded', () => {
     if (filterJenis) filterJenis.addEventListener('change', filterTable);
 
     // Handle Delete Surat
-    window.hapusSurat = (index) => {
+    window.hapusSurat = async (id) => {
         if(confirm("Apakah Anda yakin ingin menghapus data surat ini?")) {
-            suratData.splice(index, 1);
-            localStorage.setItem('suratData', JSON.stringify(suratData));
-            filterTable();
+            try {
+                const res = await fetch(`/api/letters/${id}`, { method: 'DELETE' });
+                const result = await res.json();
+                if (result.success) {
+                    await loadLetters();
+                } else {
+                    alert("Gagal menghapus surat!");
+                }
+            } catch (err) {
+                console.error("Gagal menghapus surat:", err);
+            }
         }
     };
 
-    // Handle Edit Surat
-    window.editSurat = (index) => {
-        const surat = suratData[index];
-        document.getElementById('edit-index').value = index;
+    // Handle Edit Surat Modal Popup
+    window.editSurat = (id) => {
+        const surat = suratData.find(s => s.id === id);
+        if (!surat) return;
+        
+        document.getElementById('edit-index').value = surat.id;
         document.getElementById('edit-nomor').value = surat.nomor;
         document.getElementById('edit-tanggal').value = surat.tanggal;
         document.getElementById('edit-tujuan').value = surat.tujuan;
@@ -158,18 +153,31 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Submit Edit Surat
     if (formEditSurat) {
-        formEditSurat.addEventListener('submit', (e) => {
+        formEditSurat.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const index = document.getElementById('edit-index').value;
-            
-            suratData[index].tanggal = document.getElementById('edit-tanggal').value;
-            suratData[index].tujuan = document.getElementById('edit-tujuan').value;
-            suratData[index].perihal = document.getElementById('edit-perihal').value;
+            const id = document.getElementById('edit-index').value;
+            const tanggal = document.getElementById('edit-tanggal').value;
+            const tujuan = document.getElementById('edit-tujuan').value;
+            const perihal = document.getElementById('edit-perihal').value;
 
-            localStorage.setItem('suratData', JSON.stringify(suratData));
-            editModal.classList.add('hidden');
-            filterTable();
+            try {
+                const res = await fetch(`/api/letters/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ tanggal, tujuan, perihal })
+                });
+                const result = await res.json();
+                if (result.success) {
+                    editModal.classList.add('hidden');
+                    await loadLetters();
+                } else {
+                    alert("Gagal mengupdate data!");
+                }
+            } catch (err) {
+                console.error("Gagal mengupdate data:", err);
+            }
         });
     }
 
@@ -191,8 +199,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Handle Form Submit
-    formSurat.addEventListener('submit', (e) => {
+    // Handle Form Submit (Generate Letter)
+    formSurat.addEventListener('submit', async (e) => {
         e.preventDefault();
 
         const tanggal = document.getElementById('tanggal').value;
@@ -204,36 +212,36 @@ document.addEventListener('DOMContentLoaded', () => {
         const isKepanitiaan = isKepanitiaanCb ? isKepanitiaanCb.checked : false;
         const namaKegiatan = namaKegiatanInput ? namaKegiatanInput.value : '';
 
-        const nomorSurat = generateNomorSurat(lingkup, jenis, isKepanitiaan, namaKegiatan, tanggal);
+        try {
+            const res = await fetch('/api/letters', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    tanggal, lingkup, jenis, isKepanitiaan, namaKegiatan, tujuan, perihal
+                })
+            });
+            const result = await res.json();
+            if (result.success) {
+                // Show result
+                generatedNumberEl.textContent = result.nomor;
+                resultModal.classList.remove('hidden');
+                
+                // Reset form
+                formSurat.reset();
+                if(isKepanitiaanCb) {
+                    kegiatanGroup.classList.add('hidden');
+                    namaKegiatanInput.removeAttribute('required');
+                }
 
-        // Save data
-        const newSurat = {
-            nomor: nomorSurat,
-            tanggal: tanggal,
-            lingkup: lingkup,
-            jenis: jenis,
-            isKepanitiaan: isKepanitiaan,
-            namaKegiatan: namaKegiatan,
-            tujuan: tujuan,
-            perihal: perihal
-        };
-
-        suratData.push(newSurat);
-        localStorage.setItem('suratData', JSON.stringify(suratData));
-
-        // Show result
-        generatedNumberEl.textContent = nomorSurat;
-        resultModal.classList.remove('hidden');
-        
-        // Reset form
-        formSurat.reset();
-        if(isKepanitiaanCb) {
-            kegiatanGroup.classList.add('hidden');
-            namaKegiatanInput.removeAttribute('required');
+                // Update table
+                await loadLetters();
+            } else {
+                alert(result.message || "Gagal membuat nomor surat!");
+            }
+        } catch (err) {
+            console.error("Gagal membuat nomor surat:", err);
+            alert("Terjadi kesalahan jaringan!");
         }
-
-        // Update table
-        filterTable();
     });
 
     btnCloseResult.addEventListener('click', () => {
@@ -261,19 +269,24 @@ document.addEventListener('DOMContentLoaded', () => {
     const formTambahTemplate = document.getElementById('form-tambah-template');
     const btnCancelTemplate = document.getElementById('btn-cancel-template');
 
-    let defaultTemplates = [
-        { nama: 'Surat Tugas', desc: 'Format standar untuk penugasan karyawan keluar kantor.', url: 'templates/Surat_Tugas.rtf', fileName: 'Surat_Tugas.rtf', icon: '📋' },
-        { nama: 'Surat Undangan', desc: 'Template undangan resmi untuk keperluan internal maupun eksternal.', url: 'templates/Surat_Undangan.rtf', fileName: 'Surat_Undangan.rtf', icon: '✉️' },
-        { nama: 'Surat Keterangan', desc: 'Format baku untuk menerbitkan keterangan kerja, domisili, dsb.', url: 'templates/Surat_Keterangan.rtf', fileName: 'Surat_Keterangan.rtf', icon: '📝' }
-    ];
+    let templateData = [];
 
-    let templateData = JSON.parse(localStorage.getItem('templateData')) || defaultTemplates;
+    // Load Templates from Server
+    const loadTemplates = async () => {
+        try {
+            const res = await fetch('/api/templates');
+            templateData = await res.json();
+            renderTemplates();
+        } catch (err) {
+            console.error("Gagal memuat template dari server:", err);
+        }
+    };
 
     const renderTemplates = () => {
         if (!templateContainer) return;
         templateContainer.innerHTML = '';
 
-        templateData.forEach((tpl, index) => {
+        templateData.forEach((tpl) => {
             const div = document.createElement('div');
             div.className = 'card neo-card bg-cream template-card custom-template';
             div.style.position = 'relative';
@@ -282,7 +295,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const icon = tpl.icon || '📁';
 
             div.innerHTML = `
-                <button class="admin-only" style="position: absolute; top: 10px; right: 10px; background: #ff4d4d; color: white; border: 2px solid black; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; box-shadow: 2px 2px 0px black;" onclick="hapusTemplate(${index})" title="Hapus Template">❌</button>
+                <button class="admin-only" style="position: absolute; top: 10px; right: 10px; background: #ff4d4d; color: white; border: 2px solid black; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; box-shadow: 2px 2px 0px black;" onclick="hapusTemplate(${tpl.id})" title="Hapus Template">❌</button>
                 <div class="template-icon bg-yellow">${icon}</div>
                 <h3>${tpl.nama}</h3>
                 <p>${tpl.desc}</p>
@@ -292,11 +305,20 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    window.hapusTemplate = (index) => {
+    // Handle Delete Template
+    window.hapusTemplate = async (id) => {
         if(confirm("Apakah Anda yakin ingin menghapus template ini?")) {
-            templateData.splice(index, 1);
-            localStorage.setItem('templateData', JSON.stringify(templateData));
-            renderTemplates();
+            try {
+                const res = await fetch(`/api/templates/${id}`, { method: 'DELETE' });
+                const result = await res.json();
+                if (result.success) {
+                    await loadTemplates();
+                } else {
+                    alert("Gagal menghapus template!");
+                }
+            } catch (err) {
+                console.error("Gagal menghapus template:", err);
+            }
         }
     };
 
@@ -312,8 +334,9 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Submit / Upload New Template File
     if (formTambahTemplate) {
-        formTambahTemplate.addEventListener('submit', (e) => {
+        formTambahTemplate.addEventListener('submit', async (e) => {
             e.preventDefault();
             const nama = document.getElementById('template-nama').value;
             const desc = document.getElementById('template-desc').value;
@@ -321,25 +344,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (fileInput.files.length > 0) {
                 const file = fileInput.files[0];
-                const reader = new FileReader();
+                const formData = new FormData();
+                formData.append('nama', nama);
+                formData.append('desc', desc);
+                formData.append('file', file);
 
-                reader.onload = function(event) {
-                    const url = event.target.result;
-                    templateData.push({ 
-                        nama: nama, 
-                        desc: desc, 
-                        url: url,
-                        fileName: file.name,
-                        icon: '📁'
+                try {
+                    const res = await fetch('/api/templates', {
+                        method: 'POST',
+                        body: formData // Sends multipart form natively
                     });
-                    localStorage.setItem('templateData', JSON.stringify(templateData));
-                    
-                    formTambahTemplate.reset();
-                    templateModal.classList.add('hidden');
-                    renderTemplates();
-                };
-
-                reader.readAsDataURL(file);
+                    const result = await res.json();
+                    if (result.success) {
+                        formTambahTemplate.reset();
+                        templateModal.classList.add('hidden');
+                        await loadTemplates();
+                    } else {
+                        alert(result.message || "Gagal mengunggah template!");
+                    }
+                } catch (err) {
+                    console.error("Gagal mengunggah file template:", err);
+                    alert("Terjadi kesalahan koneksi saat mengupload!");
+                }
             }
         });
     }
@@ -356,17 +382,28 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (adminLoginForm) {
-        adminLoginForm.addEventListener('submit', (e) => {
+        adminLoginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const username = document.getElementById('admin-username').value;
             const password = document.getElementById('admin-password').value;
 
-            if (username === 'adminmekasur' && password === 'admin123') {
-                setRole('admin');
-                adminLoginModal.classList.add('hidden');
-                adminLoginForm.reset();
-            } else {
-                alert('Username atau Password salah!');
+            try {
+                const res = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                const result = await res.json();
+                if (result.success) {
+                    setRole('admin');
+                    adminLoginModal.classList.add('hidden');
+                    adminLoginForm.reset();
+                } else {
+                    alert(result.message || 'Username atau Password salah!');
+                }
+            } catch (err) {
+                console.error("Gagal login:", err);
+                alert('Gagal menghubungkan ke server login!');
             }
         });
     }
@@ -378,11 +415,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnCancelContact = document.getElementById('btn-cancel-contact');
     const formContactSettings = document.getElementById('form-contact-settings');
 
-    let defaultContacts = [
-        { name: 'Nopal', phone: '082229136632' },
-        { name: 'Gita', phone: '081935135877' }
-    ];
-    let contactsData = JSON.parse(localStorage.getItem('helpContacts')) || defaultContacts;
+    let contactsData = [];
+
+    // Load Help Contacts from Server
+    const loadContacts = async () => {
+        try {
+            const res = await fetch('/api/contacts');
+            contactsData = await res.json();
+            renderContacts();
+        } catch (err) {
+            console.error("Gagal memuat kontak dari server:", err);
+        }
+    };
 
     const renderContacts = () => {
         if (!helpContactsContainer) return;
@@ -399,7 +443,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Image icon
             const img = document.createElement('img');
-            img.src = `assets/${index+1}.png`; 
+            img.src = `/static/assets/${index+1}.png`; 
             img.alt = `WA ${contact.name}`;
             img.style.cssText = 'width: 50px; height: 50px; object-fit: cover; border-radius: 50%; border: 2px solid white; display: block; margin: 0 auto 5px;';
             
@@ -432,26 +476,39 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (formContactSettings) {
-        formContactSettings.addEventListener('submit', (e) => {
+        formContactSettings.addEventListener('submit', async (e) => {
             e.preventDefault();
             const c1Name = document.getElementById('contact1-name').value;
             const c1Phone = document.getElementById('contact1-phone').value;
             const c2Name = document.getElementById('contact2-name').value;
             const c2Phone = document.getElementById('contact2-phone').value;
 
-            contactsData = [
+            const newContacts = [
                 { name: c1Name, phone: c1Phone },
                 { name: c2Name, phone: c2Phone }
             ];
             
-            localStorage.setItem('helpContacts', JSON.stringify(contactsData));
-            contactSettingsModal.classList.add('hidden');
-            renderContacts();
+            try {
+                const res = await fetch('/api/contacts', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(newContacts)
+                });
+                const result = await res.json();
+                if (result.success) {
+                    contactSettingsModal.classList.add('hidden');
+                    await loadContacts();
+                } else {
+                    alert("Gagal menyimpan kontak!");
+                }
+            } catch (err) {
+                console.error("Gagal menyimpan kontak:", err);
+            }
         });
     }
 
-    // Initial render
-    renderTable();
-    renderTemplates();
-    renderContacts();
+    // Initial load from Backend APIs
+    loadLetters();
+    loadTemplates();
+    loadContacts();
 });
