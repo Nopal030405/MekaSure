@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MEKASUR - Sistem Surat HIMAMEKA</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">
+            <h1>MEKA<span>SUR.</span></h1>
+        </div>
+        <ul class="nav-links">
+            <li><button class="nav-btn active" data-target="homescreen">Home</button></li>
+            <li><button class="nav-btn" data-target="ambil-nomor">Ambil Nomor</button></li>
+            <li><button class="nav-btn" data-target="rekap-surat">Rekap Surat</button></li>
+            <li><button class="nav-btn" data-target="template-surat">Template Surat</button></li>
+        </ul>
+    </nav>
+
+    <main class="container">
+        <!-- Section Homescreen -->
+        <section id="homescreen" class="section active">
+            <div class="card neo-card bg-yellow text-black" style="padding: 60px 30px; text-align: center; margin-bottom: 30px;">
+                <h2 style="font-size: 3rem; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 2px;">Sistem Administrasi Himpunan</h2>
+                <p style="font-size: 1.2rem; margin-bottom: 40px; font-weight: 600;">Kelola persuratan organisasi dengan lebih mudah, cepat, dan terpusat.</p>
+                <div style="display: flex; justify-content: center; gap: 15px; flex-wrap: wrap;">
+                    <button class="btn btn-blue btn-large" style="max-width: 250px;" onclick="showAdminLogin()">Masuk sebagai Admin</button>
+                    <button class="btn btn-yellow btn-large" style="max-width: 250px;" onclick="setRole('viewer')">Masuk sebagai Viewer</button>
+                </div>
+                <p id="current-role-display" style="margin-top: 15px; font-weight: bold;"></p>
+            </div>
+            <div class="template-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); text-align: center;">
+                <div class="card neo-card bg-cream" style="padding: 20px;">
+                    <div style="font-size: 2rem; margin-bottom: 10px;">⚡</div>
+                    <h3>Cepat</h3>
+                    <p>Pembuatan nomor otomatis.</p>
+                </div>
+                <div class="card neo-card bg-cream" style="padding: 20px;">
+                    <div style="font-size: 2rem; margin-bottom: 10px;">💾</div>
+                    <h3>Aman</h3>
+                    <p>Tersimpan langsung di browser.</p>
+                </div>
+                <div class="card neo-card bg-cream" style="padding: 20px;">
+                    <div style="font-size: 2rem; margin-bottom: 10px;">📄</div>
+                    <h3>Lengkap</h3>
+                    <p>Tersedia template standar.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section Ambil Nomor -->
+        <section id="ambil-nomor" class="section hidden">
+            <div class="header-section bg-blue text-cream">
+                <h2>Ambil Nomor Surat</h2>
+                <p>Formulir pengambilan nomor urut surat resmi perusahaan.</p>
+            </div>
+            
+            <div class="card neo-card form-container bg-cream">
+                <form id="form-surat">
+                    <div class="form-group">
+                        <label for="tanggal">Tanggal Surat</label>
+                        <input type="date" id="tanggal" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="lingkup">Lingkup Surat</label>
+                        <select id="lingkup" required>
+                            <option value="" disabled selected>Pilih Lingkup Surat...</option>
+                            <option value="A">Internal (Pengurus/Demisioner)</option>
+                            <option value="B">Eksternal (Ormawa FT)</option>
+                            <option value="C">Pimpinan Fakultas Teknik (Dekan/Wadek/TU FT)</option>
+                            <option value="D">Eksternal Fakultas/Universitas</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="jenis">Jenis Surat</label>
+                        <select id="jenis" required>
+                            <option value="" disabled selected>Pilih Jenis Surat...</option>
+                            <option value="SK">Surat Keputusan (SK)</option>
+                            <option value="SU">Surat Undangan (SU)</option>
+                            <option value="SPm">Surat Permohonan (SPm)</option>
+                            <option value="SPb">Surat Pemberitahuan (SPb)</option>
+                            <option value="SPj">Surat Peminjaman (SPj)</option>
+                            <option value="SPn">Surat Pernyataan (SPn)</option>
+                            <option value="SM">Surat Mandat (SM)</option>
+                            <option value="ST">Surat Tugas (ST)</option>
+                            <option value="SKet">Surat Keterangan (SKet)</option>
+                            <option value="SR">Surat Rekomendasi (SR)</option>
+                            <option value="SB">Surat Balasan (SB)</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="display: flex; align-items: center; gap: 10px;">
+                        <input type="checkbox" id="is-kepanitiaan" style="width: 20px; height: 20px;">
+                        <label for="is-kepanitiaan" style="margin-bottom: 0;">Apakah ini surat kepanitiaan?</label>
+                    </div>
+                    <div class="form-group hidden" id="kegiatan-group">
+                        <label for="nama-kegiatan">Nama Kegiatan</label>
+                        <input type="text" id="nama-kegiatan" placeholder="Cth: Lomba Robotik">
+                    </div>
+                    <div class="form-group">
+                        <label for="tujuan">Tujuan Surat</label>
+                        <input type="text" id="tujuan" placeholder="Cth: PT. Maju Bersama" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="perihal">Perihal</label>
+                        <input type="text" id="perihal" placeholder="Cth: Undangan Rapat Evaluasi" required>
+                    </div>
+                    <button type="submit" class="btn btn-yellow btn-large">Generate Nomor Surat</button>
+                </form>
+            </div>
+
+            <!-- Modal Result (hidden by default) -->
+            <div id="result-modal" class="card neo-card result-box bg-yellow hidden">
+                <h3>Nomor Surat Anda:</h3>
+                <h2 id="generated-number" class="highlight-text">---/---/---</h2>
+                <p style="margin-bottom: 20px;">Surat telah otomatis tersimpan di menu <strong>Rekap Surat</strong>.</p>
+                <div style="display: flex; justify-content: center; gap: 10px;">
+                    <button class="btn btn-cream" style="border: 2px solid black;" id="btn-copy-result">Salin</button>
+                    <button class="btn btn-blue" id="btn-close-result">Tutup</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section Rekap Surat -->
+        <section id="rekap-surat" class="section hidden">
+            <div class="header-section bg-yellow text-black">
+                <h2>Rekapitulasi Surat</h2>
+                <p>Daftar seluruh surat yang telah diregistrasi.</p>
+            </div>
+
+            <div class="card neo-card bg-cream filter-container" style="margin-bottom: 20px; padding: 20px;">
+                <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                    <div class="form-group" style="flex: 1; margin-bottom: 0;">
+                        <input type="text" id="search-input" placeholder="Cari perihal atau tujuan...">
+                    </div>
+                    <div class="form-group" style="flex: 1; margin-bottom: 0;">
+                        <select id="filter-jenis">
+                            <option value="">Semua Jenis Surat</option>
+                            <option value="SK">Surat Keputusan (SK)</option>
+                            <option value="SU">Surat Undangan (SU)</option>
+                            <option value="SPm">Surat Permohonan (SPm)</option>
+                            <option value="SPb">Surat Pemberitahuan (SPb)</option>
+                            <option value="SPj">Surat Peminjaman (SPj)</option>
+                            <option value="SPn">Surat Pernyataan (SPn)</option>
+                            <option value="SM">Surat Mandat (SM)</option>
+                            <option value="ST">Surat Tugas (ST)</option>
+                            <option value="SKet">Surat Keterangan (SKet)</option>
+                            <option value="SR">Surat Rekomendasi (SR)</option>
+                            <option value="SB">Surat Balasan (SB)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card neo-card bg-cream overflow-x">
+                <table class="neo-table" id="table-rekap">
+                    <thead>
+                        <tr class="bg-blue text-cream">
+                            <th>No. Surat</th>
+                            <th>Tanggal</th>
+                            <th>Jenis</th>
+                            <th>Kepanitiaan</th>
+                            <th>Tujuan</th>
+                            <th>Perihal</th>
+                            <th class="admin-only">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Data will be populated here via JS -->
+                    </tbody>
+                </table>
+                <div id="empty-state" class="empty-state hidden">
+                    <p>Belum ada data surat.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section Template Surat -->
+        <section id="template-surat" class="section hidden">
+            <div class="header-section bg-blue text-cream">
+                <h2>Template Surat</h2>
+                <p>Unduh format standar surat perusahaan di sini.</p>
+                <button class="btn btn-yellow admin-only" id="btn-tambah-template" style="margin-top: 15px;">+ Tambah Template</button>
+            </div>
+
+            <div class="template-grid" id="template-container">
+                <!-- Data will be populated here via JS -->
+            </div>
+        </section>
+
+        <!-- Modal Tambah Template (hidden by default) -->
+        <div id="template-modal" class="modal-overlay hidden">
+            <div class="card neo-card form-container bg-cream modal-content">
+                <div class="header-section bg-yellow text-black" style="padding: 10px; margin-bottom: 20px;">
+                    <h3 style="margin:0;">Tambah Template</h3>
+                </div>
+                <form id="form-tambah-template">
+                    <div class="form-group">
+                        <label for="template-nama">Nama Template</label>
+                        <input type="text" id="template-nama" required placeholder="Cth: Surat Cuti">
+                    </div>
+                    <div class="form-group">
+                        <label for="template-desc">Deskripsi</label>
+                        <input type="text" id="template-desc" required placeholder="Cth: Format standar untuk pengajuan cuti.">
+                    </div>
+                    <div class="form-group">
+                        <label for="template-file">File Template</label>
+                        <input type="file" id="template-file" required accept=".doc,.docx,.pdf,.rtf,.txt">
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button type="submit" class="btn btn-blue" style="flex: 1;">Simpan Template</button>
+                        <button type="button" class="btn btn-yellow" id="btn-cancel-template" style="flex: 1;">Batal</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Modal Edit (hidden by default) -->
+        <div id="edit-modal" class="modal-overlay hidden">
+            <div class="card neo-card form-container bg-cream modal-content">
+                <div class="header-section bg-yellow text-black" style="padding: 10px; margin-bottom: 20px;">
+                    <h3 style="margin:0;">Edit Data Surat</h3>
+                </div>
+                <form id="form-edit-surat">
+                    <input type="hidden" id="edit-index">
+                    <div class="form-group">
+                        <label>Nomor Surat (Tidak bisa diubah)</label>
+                        <input type="text" id="edit-nomor" disabled style="background-color: #eee;">
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-tanggal">Tanggal Surat</label>
+                        <input type="date" id="edit-tanggal" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-tujuan">Tujuan Surat</label>
+                        <input type="text" id="edit-tujuan" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-perihal">Perihal</label>
+                        <input type="text" id="edit-perihal" required>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button type="submit" class="btn btn-blue" style="flex: 1;">Simpan Perubahan</button>
+                        <button type="button" class="btn btn-yellow" id="btn-cancel-edit" style="flex: 1;">Batal</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <!-- Modal Login Admin (hidden by default) -->
+        <div id="admin-login-modal" class="modal-overlay hidden">
+            <div class="card neo-card form-container bg-cream modal-content">
+                <div class="header-section bg-blue text-cream" style="padding: 10px; margin-bottom: 20px;">
+                    <h3 style="margin:0;">Login Admin</h3>
+                </div>
+                <form id="form-admin-login">
+                    <div class="form-group">
+                        <label for="admin-username">Username</label>
+                        <input type="text" id="admin-username" required placeholder="Cth: adminmekasur">
+                    </div>
+                    <div class="form-group">
+                        <label for="admin-password">Password</label>
+                        <input type="password" id="admin-password" required placeholder="Masukkan password">
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button type="submit" class="btn btn-yellow" style="flex: 1;">Login</button>
+                        <button type="button" class="btn btn-blue" id="btn-cancel-login" style="flex: 1;">Batal</button>
+                    </div>
+                </form>
+            </div>
+        <!-- Modal Pengaturan Kontak (hidden by default) -->
+        <div id="contact-settings-modal" class="modal-overlay hidden">
+            <div class="card neo-card form-container bg-cream modal-content">
+                <div class="header-section bg-yellow text-black" style="padding: 10px; margin-bottom: 20px;">
+                    <h3 style="margin:0;">Pengaturan Bantuan / Keluhan</h3>
+                </div>
+                <form id="form-contact-settings">
+                    <h4 style="margin-bottom: 10px;">Kontak 1</h4>
+                    <div class="form-group">
+                        <label for="contact1-name">Nama</label>
+                        <input type="text" id="contact1-name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="contact1-phone">Nomor WhatsApp</label>
+                        <input type="text" id="contact1-phone" required placeholder="Cth: 082229136632">
+                    </div>
+                    
+                    <h4 style="margin-bottom: 10px;">Kontak 2</h4>
+                    <div class="form-group">
+                        <label for="contact2-name">Nama</label>
+                        <input type="text" id="contact2-name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="contact2-phone">Nomor WhatsApp</label>
+                        <input type="text" id="contact2-phone" required placeholder="Cth: 081935135877">
+                    </div>
+                    
+                    <div style="display: flex; gap: 10px;">
+                        <button type="submit" class="btn btn-blue" style="flex: 1;">Simpan</button>
+                        <button type="button" class="btn btn-yellow" id="btn-cancel-contact" style="flex: 1;">Batal</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="card neo-card bg-blue text-cream" style="margin: 40px auto; max-width: 1000px; padding: 30px;">
+        <h3 style="text-align: center; margin-bottom: 30px; color: var(--primary-yellow);">MEKASUR - Himpunan Mahasiswa Mekatronika (HIMAMEKA UTM)</h3>
+        
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; flex-wrap: wrap; text-align: center;">
+            
+            <!-- Kiri: IG & TikTok -->
+            <div style="flex: 1; min-width: 150px; display: flex; justify-content: space-evenly;">
+                <a href="https://instagram.com/himamekautm_" target="_blank" style="text-decoration: none; color: white;">
+                    <img src="assets/ig.png" alt="IG Himameka" style="width: 50px; height: 50px; object-fit: cover; border-radius: 50%; border: 2px solid white; display: block; margin: 0 auto 5px;">
+                    <span style="font-size: 0.9rem; font-weight: bold;">IG Himameka</span>
+                </a>
+                <a href="https://tiktok.com/@himameka_utm26" target="_blank" style="text-decoration: none; color: white;">
+                    <img src="assets/tiktok.png" alt="TikTok Himameka" style="width: 50px; height: 50px; object-fit: cover; border-radius: 50%; border: 2px solid white; display: block; margin: 0 auto 5px;">
+                    <span style="font-size: 0.9rem; font-weight: bold;">TikTok Himameka</span>
+                </a>
+            </div>
+
+            <!-- Tengah: Created By -->
+            <div class="creator-info" style="flex: 1; min-width: 150px; display: flex; flex-direction: column; align-items: center;">
+                <p style="font-size: 0.9rem; margin-bottom: 10px;">Created by</p>
+                <a href="https://instagram.com/nopalzakka" target="_blank" style="text-decoration: none; color: white;">
+                    <img src="assets/naufal.jpeg" alt="Naufal Zakka" class="neo-card" style="width: 60px; height: 60px; object-fit: cover; border-radius: 50%; border-width: 2px; padding: 0; display: block; margin: 0 auto 5px;">
+                    <span style="font-size: 0.9rem; font-weight: bold;">Naufal Zakka</span>
+                </a>
+            </div>
+
+            <!-- Kanan: Bantuan (WA) -->
+            <div style="flex: 1; min-width: 150px; display: flex; flex-direction: column; align-items: center;">
+                <div id="help-contacts-container" style="display: flex; justify-content: space-evenly; width: 100%;">
+                    <!-- JS renders this -->
+                </div>
+                <button class="btn btn-yellow admin-only" id="btn-edit-contacts" style="margin-top: 15px; padding: 5px 10px; font-size: 0.8rem;">⚙️ Edit Kontak Admin</button>
+            </div>
+
+        </div>
+    </footer>
+
+    <script src="js/app.js"></script>
+</body>
+</html>

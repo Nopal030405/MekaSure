@@ -1,0 +1,367 @@
+:root {
+    --primary-blue: #00539C;
+    --primary-yellow: #FFD662;
+    --primary-cream: #FDF8E1;
+    --black: #000000;
+    --white: #FFFFFF;
+    --border-width: 3px;
+    --shadow-offset: 6px;
+    --transition-speed: 0.2s;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Space Grotesk', sans-serif;
+}
+
+body {
+    background-color: var(--primary-cream);
+    color: var(--black);
+    line-height: 1.6;
+}
+
+/* Typography */
+h1, h2, h3 {
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: -1px;
+}
+
+/* Utilities */
+.bg-blue { background-color: var(--primary-blue); }
+.bg-yellow { background-color: var(--primary-yellow); }
+.bg-cream { background-color: var(--primary-cream); }
+.text-cream { color: var(--primary-cream); }
+.text-black { color: var(--black); }
+.hidden { display: none !important; }
+.w-100 { width: 100%; }
+.overflow-x { overflow-x: auto; }
+
+/* Neo Brutalism Basics */
+.neo-card {
+    border: var(--border-width) solid var(--black);
+    box-shadow: var(--shadow-offset) var(--shadow-offset) 0px var(--black);
+    border-radius: 0; /* Brutalism prefers sharp edges or very slight rounding */
+    transition: transform var(--transition-speed), box-shadow var(--transition-speed);
+}
+
+.neo-card:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: calc(var(--shadow-offset) + 2px) calc(var(--shadow-offset) + 2px) 0px var(--black);
+}
+
+/* Buttons */
+.btn {
+    display: inline-block;
+    padding: 10px 20px;
+    font-size: 1rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    cursor: pointer;
+    border: var(--border-width) solid var(--black);
+    box-shadow: 4px 4px 0px var(--black);
+    transition: all 0.1s ease-in-out;
+    text-align: center;
+}
+
+.btn:active {
+    transform: translate(4px, 4px);
+    box-shadow: 0px 0px 0px var(--black);
+}
+
+.btn-blue {
+    background-color: var(--primary-blue);
+    color: var(--primary-cream);
+}
+
+.btn-yellow {
+    background-color: var(--primary-yellow);
+    color: var(--black);
+}
+
+.btn-large {
+    padding: 15px 30px;
+    font-size: 1.2rem;
+    width: 100%;
+    margin-top: 20px;
+}
+
+/* Navbar */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 30px;
+    background-color: var(--primary-blue);
+    border-bottom: var(--border-width) solid var(--black);
+}
+
+.logo h1 {
+    color: var(--primary-cream);
+    font-size: 2rem;
+    margin: 0;
+}
+
+.logo span {
+    color: var(--primary-yellow);
+}
+
+.nav-links {
+    list-style: none;
+    display: flex;
+    gap: 15px;
+}
+
+.nav-btn {
+    background: var(--primary-cream);
+    border: 2px solid var(--black);
+    padding: 8px 16px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 3px 3px 0px var(--black);
+    transition: all 0.1s;
+}
+
+.nav-btn.active {
+    background: var(--primary-yellow);
+    transform: translate(2px, 2px);
+    box-shadow: 1px 1px 0px var(--black);
+}
+
+.nav-btn:hover:not(.active) {
+    background: var(--white);
+}
+
+/* Main Container */
+.container {
+    max-width: 1000px;
+    margin: 40px auto;
+    padding: 0 20px;
+}
+
+.header-section {
+    padding: 20px;
+    border: var(--border-width) solid var(--black);
+    margin-bottom: 30px;
+    box-shadow: var(--shadow-offset) var(--shadow-offset) 0px var(--black);
+}
+
+.header-section h2 {
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+}
+
+/* Forms */
+.form-container {
+    padding: 30px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    font-weight: 700;
+    margin-bottom: 8px;
+    font-size: 1.1rem;
+}
+
+.form-group input, 
+.form-group select {
+    width: 100%;
+    padding: 12px;
+    font-size: 1rem;
+    border: var(--border-width) solid var(--black);
+    background-color: var(--white);
+    outline: none;
+    transition: box-shadow 0.2s;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    box-shadow: 4px 4px 0px var(--primary-blue);
+}
+
+/* Result Modal/Box */
+.result-box {
+    margin-top: 30px;
+    padding: 30px;
+    text-align: center;
+}
+
+.highlight-text {
+    font-size: 3rem;
+    margin: 20px 0;
+    background-color: var(--white);
+    padding: 10px;
+    border: var(--border-width) solid var(--black);
+    display: inline-block;
+}
+
+/* Table */
+.neo-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.neo-table th, .neo-table td {
+    padding: 15px;
+    text-align: left;
+    border: var(--border-width) solid var(--black);
+}
+
+.neo-table th {
+    font-size: 1.1rem;
+    text-transform: uppercase;
+}
+
+.neo-table tbody tr {
+    background-color: var(--white);
+    transition: background-color 0.2s;
+}
+
+.neo-table tbody tr:hover {
+    background-color: #f0f0f0;
+}
+
+.empty-state {
+    padding: 40px;
+    text-align: center;
+    font-weight: bold;
+    font-size: 1.2rem;
+    border-top: var(--border-width) solid var(--black);
+    background-color: var(--white);
+}
+
+/* Template Cards */
+.template-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 30px;
+}
+
+.template-card {
+    padding: 25px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.template-icon {
+    font-size: 2.5rem;
+    padding: 15px;
+    border: var(--border-width) solid var(--black);
+    box-shadow: 4px 4px 0px var(--black);
+    margin-bottom: 20px;
+}
+
+.template-card h3 {
+    font-size: 1.5rem;
+    margin-bottom: 10px;
+}
+
+.template-card p {
+    margin-bottom: 20px;
+    flex-grow: 1;
+}
+
+/* Modal Overlay */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    width: 90%;
+    max-width: 500px;
+    background: var(--primary-cream);
+    padding: 30px;
+    position: relative;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .navbar {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+        padding: 15px;
+    }
+    
+    .nav-links {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 10px;
+    }
+
+    .nav-btn {
+        font-size: 0.9rem;
+        padding: 8px 12px;
+    }
+    
+    .header-section {
+        padding: 15px;
+    }
+
+    .header-section h2 {
+        font-size: 1.8rem;
+    }
+
+    #homescreen h2 {
+        font-size: 2.2rem !important;
+    }
+
+    .form-container, .result-box, .template-card {
+        padding: 20px;
+    }
+
+    .btn-large {
+        font-size: 1rem;
+        padding: 10px 20px;
+    }
+    
+    .highlight-text {
+        font-size: 1.4rem !important;
+        padding: 15px 10px;
+        margin: 15px 0;
+        word-break: break-all;
+    }
+
+    .neo-table th, .neo-table td {
+        padding: 10px;
+        font-size: 0.9rem;
+    }
+
+    footer > div {
+        flex-direction: column !important;
+        text-align: center !important;
+        align-items: center !important;
+        gap: 30px !important;
+    }
+
+    .creator-info, .hima-info {
+        width: 100%;
+    }
+
+    #social-logos, #help-contacts-container {
+        justify-content: center !important;
+    }
+}
+
+/* Role Based Display */
+body.role-viewer .admin-only {
+    display: none !important;
+}
