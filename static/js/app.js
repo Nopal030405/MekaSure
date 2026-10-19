@@ -119,6 +119,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             if (targetId === 'template-surat') {
                 renderTemplates();
+                showKopWarningModal();
             }
             if (targetId === 'ambil-nomor') {
                 updateViewerNotice();
@@ -495,11 +496,72 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnCancelTemplate = document.getElementById('btn-cancel-template');
 
     const defaultTemplates = [
-        { nama: 'Surat Tugas', desc: 'Format standar untuk penugasan karyawan keluar kantor.', url: 'templates/Surat_Tugas.rtf', fileName: 'Surat_Tugas.rtf', icon: '📋', fileSize: null },
+        { nama: 'Surat Tugas', desc: 'Format standar untuk penugasan pengurus/anggota keluar.', url: 'templates/Surat_Tugas.rtf', fileName: 'Surat_Tugas.rtf', icon: '📋', fileSize: null },
         { nama: 'Surat Undangan', desc: 'Template undangan resmi untuk keperluan internal maupun eksternal.', url: 'templates/Surat_Undangan.rtf', fileName: 'Surat_Undangan.rtf', icon: '✉️', fileSize: null },
-        { nama: 'Surat Keterangan', desc: 'Format baku untuk menerbitkan keterangan kerja, domisili, dsb.', url: 'templates/Surat_Keterangan.rtf', fileName: 'Surat_Keterangan.rtf', icon: '📝', fileSize: null }
+        { nama: 'Surat Keterangan', desc: 'Format baku untuk menerbitkan surat keterangan organisasi.', url: 'templates/Surat_Keterangan.rtf', fileName: 'Surat_Keterangan.rtf', icon: '📝', fileSize: null }
     ];
-    let templateData = JSON.parse(localStorage.getItem('templateData')) || defaultTemplates;
+    let templateData = JSON.parse(localStorage.getItem('templateData'));
+    if (!templateData || templateData.length === 0) {
+        templateData = defaultTemplates;
+    }
+
+    // =========================================
+    // MODAL: PERINGATAN KOP SURAT (WINDOW TENGAH OTOMATIS)
+    // =========================================
+    const DEFAULT_KOP_WARNING = 'Sesuaikan KOP suratnya jangan Lupa (apabila surat dari panitia pelaksana maka beri keterangan PANITIA PELAKSANA "APA", jika bukan maka hapus tulisan "PANITIA PELAKSANA" pada KOP nya.';
+
+    const getKopWarningText = () => {
+        return localStorage.getItem('kop_reminder_text') || DEFAULT_KOP_WARNING;
+    };
+
+    const showKopWarningModal = () => {
+        const modal = document.getElementById('kop-warning-modal');
+        const textEl = document.getElementById('kop-warning-text');
+        const inputEl = document.getElementById('kop-warning-input');
+        const currentText = getKopWarningText();
+
+        if (textEl) textEl.textContent = currentText;
+        if (inputEl) inputEl.value = currentText;
+        if (modal) modal.classList.remove('hidden');
+    };
+
+    const btnCloseKopWarning = document.getElementById('btn-close-kop-warning');
+    const btnCloseKopWarningX = document.getElementById('btn-close-kop-warning-x');
+    const btnOpenKopWarning = document.getElementById('btn-open-kop-warning');
+    const btnSaveKopWarning = document.getElementById('btn-save-kop-warning');
+
+    if (btnCloseKopWarning) {
+        btnCloseKopWarning.addEventListener('click', () => {
+            const modal = document.getElementById('kop-warning-modal');
+            if (modal) modal.classList.add('hidden');
+        });
+    }
+    if (btnCloseKopWarningX) {
+        btnCloseKopWarningX.addEventListener('click', () => {
+            const modal = document.getElementById('kop-warning-modal');
+            if (modal) modal.classList.add('hidden');
+        });
+    }
+    if (btnOpenKopWarning) {
+        btnOpenKopWarning.addEventListener('click', () => {
+            showKopWarningModal();
+        });
+    }
+    if (btnSaveKopWarning) {
+        btnSaveKopWarning.addEventListener('click', () => {
+            const inputEl = document.getElementById('kop-warning-input');
+            const textEl = document.getElementById('kop-warning-text');
+            if (inputEl && inputEl.value.trim()) {
+                const newText = inputEl.value.trim();
+                localStorage.setItem('kop_reminder_text', newText);
+                if (textEl) textEl.textContent = newText;
+                btnSaveKopWarning.textContent = '✅ Perubahan Tersimpan!';
+                setTimeout(() => {
+                    btnSaveKopWarning.textContent = '💾 Simpan Perubahan Teks';
+                }, 2000);
+            }
+        });
+    }
 
     // -- Helpers --
     const getFileIcon = (fileName) => {
@@ -516,10 +578,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (bytes < 1024) return bytes + ' B';
         if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
         return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
-    };
-    const updateTemplateBadge = () => {
-        const badge = document.getElementById('template-count-badge');
-        if (badge) badge.textContent = `${templateData.length} File`;
     };
 
     // -- File input preview --
@@ -661,7 +719,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const renderTemplates = () => {
         if (!templateContainer) return;
         templateContainer.innerHTML = '';
-        updateTemplateBadge();
         if (templateData.length === 0) {
             templateContainer.innerHTML = `
                 <div style="grid-column:1/-1; text-align:center; padding:50px 20px;">
