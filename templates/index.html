@@ -290,109 +290,27 @@
         <!-- Modal: Tambah Template (Admin) -->
         <div id="template-modal" class="modal-overlay hidden">
             <div class="card neo-card form-container bg-cream modal-content">
-                <div class="header-section bg-yellow text-black" style="padding: 12px 15px; margin-bottom: 20px; display:flex; align-items:center; gap:10px;">
-                    <span style="font-size:1.8rem;">➕</span>
-                    <div>
-                        <h3 style="margin:0; font-size:1.1rem;">Tambah Template Surat</h3>
-                        <small style="font-weight:normal;">Upload file template resmi untuk diunduh pengurus</small>
-                    </div>
+                <div class="header-section bg-yellow text-black" style="padding: 10px; margin-bottom: 20px;">
+                    <h3 style="margin:0;">Tambah Template</h3>
                 </div>
                 <form id="form-tambah-template">
                     <div class="form-group">
-                        <label for="template-nama">📝 Nama Template <span style="color:red;">*</span></label>
-                        <input type="text" id="template-nama" required placeholder="Cth: Surat Peminjaman Ruangan, Surat Undangan...">
+                        <label for="template-nama">Nama Template</label>
+                        <input type="text" id="template-nama" required placeholder="Cth: Surat Cuti">
                     </div>
                     <div class="form-group">
-                        <label for="template-desc">💬 Deskripsi Singkat <span style="color:red;">*</span></label>
-                        <input type="text" id="template-desc" required placeholder="Cth: Digunakan untuk meminjam fasilitas kampus.">
+                        <label for="template-desc">Deskripsi</label>
+                        <input type="text" id="template-desc" required placeholder="Cth: Format standar untuk pengajuan cuti.">
                     </div>
                     <div class="form-group">
-                        <label for="template-file">📎 Upload File Template <span style="color:red;">*</span></label>
-                        <div id="file-drop-zone" style="border:2px dashed #333; border-radius:4px; padding:20px; text-align:center; background:#fafafa; cursor:pointer; transition:background 0.2s;" onclick="document.getElementById('template-file').click()">
-                            <div id="file-drop-icon" style="font-size:2.5rem; margin-bottom:8px;">📂</div>
-                            <p id="file-drop-text" style="margin:0; font-weight:600; color:#555;">Klik untuk memilih file</p>
-                            <p style="margin:4px 0 0; font-size:0.8rem; color:#888;">Format: .doc, .docx, .pdf, .rtf, .txt &nbsp;|&nbsp; Maks. 3 MB</p>
-                        </div>
-                        <input type="file" id="template-file" required accept=".doc,.docx,.pdf,.rtf,.txt" style="display:none;">
-                        <div id="file-selected-info" style="display:none; margin-top:10px; background:#e8f4fd; border:2px solid #333; padding:10px; border-radius:4px;">
-                            <div style="display:flex; align-items:center; gap:10px;">
-                                <span id="file-selected-icon" style="font-size:1.8rem;">📄</span>
-                                <div>
-                                    <div id="file-selected-name" style="font-weight:700; font-size:0.95rem;"></div>
-                                    <div id="file-selected-size" style="font-size:0.8rem; color:#666;"></div>
-                                </div>
-                                <button type="button" onclick="clearFileInput()" style="margin-left:auto; background:#ff4d4d; color:white; border:2px solid black; border-radius:50%; width:26px; height:26px; cursor:pointer; font-size:0.8rem; flex-shrink:0;">✕</button>
-                            </div>
-                        </div>
+                        <label for="template-file">File Template</label>
+                        <input type="file" id="template-file" required accept=".doc,.docx,.pdf,.rtf,.txt">
                     </div>
-                    <div style="display: flex; gap: 10px; margin-top:5px;">
-                        <button type="submit" class="btn btn-blue" style="flex: 2;">💾 Simpan Template</button>
+                    <div style="display: flex; gap: 10px;">
+                        <button type="submit" class="btn btn-blue" style="flex: 1;">Simpan Template</button>
                         <button type="button" class="btn btn-yellow" id="btn-cancel-template" style="flex: 1;">Batal</button>
                     </div>
                 </form>
-            </div>
-        </div>
-
-        <!-- Modal: Lihat Template (Semua Role) -->
-        <div id="view-template-modal" class="modal-overlay hidden">
-            <div class="card neo-card form-container bg-cream modal-content" style="max-width:500px; padding:0; overflow:hidden;">
-                <!-- Header -->
-                <div class="header-section bg-blue text-cream" style="padding:18px 15px; margin-bottom:0; text-align:center;">
-                    <div id="view-template-icon" style="font-size:3rem; margin-bottom:8px;">📁</div>
-                    <h3 id="view-template-title" style="margin:0; font-size:1.3rem; word-break:break-word;"></h3>
-                    <span id="view-template-type-badge" style="display:inline-block; margin-top:6px; background:var(--primary-yellow); color:black; font-size:0.72rem; font-weight:700; padding:2px 10px; border-radius:999px; border:2px solid black; letter-spacing:1px;"></span>
-                </div>
-                <!-- Body -->
-                <div style="padding:18px;">
-                    <p id="view-template-desc" style="margin-bottom:14px; color:#444; font-size:0.95rem; line-height:1.5;"></p>
-
-                    <!-- KOP Preview (read for all, editable for admin) -->
-                    <div id="kop-preview-box" style="background:#fffde7; border:2px solid #333; padding:12px; border-radius:4px; margin-bottom:14px; font-size:0.82rem; line-height:1.6;">
-                        <div style="text-align:center; font-weight:700; font-size:0.85rem; text-transform:uppercase;">HIMPUNAN MAHASISWA MEKATRONIKA</div>
-                        <div style="text-align:center; font-size:0.78rem;">FT-KM Universitas Trunodjoyo Madura</div>
-                        <div id="kop-panpel-line" style="text-align:center; font-size:0.78rem; font-weight:700; display:none;"></div>
-                        <hr style="border:1px solid #333; margin:6px 0;">
-                        <div style="font-size:0.74rem; text-align:center; color:#666;">Sekretariat: Kampus UTM Fakultas Teknik, Bangkalan</div>
-                    </div>
-
-                    <!-- Admin: Edit Panel -->
-                    <div class="admin-only" id="admin-edit-kop-panel" style="background:#fff8e1; border:2px dashed #f5a623; border-radius:4px; padding:12px; margin-bottom:14px;">
-                        <div style="font-weight:700; font-size:0.82rem; margin-bottom:10px; color:#b07d00;">⚙️ Edit Info Template (Admin)</div>
-                        <div style="margin-bottom:10px;">
-                            <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Deskripsi Template:</label>
-                            <textarea id="edit-tpl-desc" rows="2" style="width:100%; box-sizing:border-box; border:2px solid #333; border-radius:3px; padding:6px; font-size:0.82rem; font-family:inherit; resize:vertical;"></textarea>
-                        </div>
-                        <div style="margin-bottom:10px; display:flex; align-items:center; gap:10px;">
-                            <input type="checkbox" id="edit-tpl-panpel" style="width:16px; height:16px; cursor:pointer;">
-                            <label for="edit-tpl-panpel" style="font-size:0.82rem; font-weight:700; cursor:pointer;">Surat dari Panitia Pelaksana?</label>
-                        </div>
-                        <div id="panpel-name-group" style="display:none; margin-bottom:10px;">
-                            <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Nama Kegiatan Panitia:</label>
-                            <input type="text" id="edit-tpl-panpel-name" placeholder="Cth: Latihan Penampilan Bakat Duta" style="width:100%; box-sizing:border-box; border:2px solid #333; border-radius:3px; padding:6px; font-size:0.82rem;">
-                        </div>
-                        <button type="button" id="btn-save-tpl-info" class="btn btn-blue" style="width:100%; font-size:0.85rem;">💾 Simpan Perubahan</button>
-                    </div>
-
-                    <!-- File info -->
-                    <div style="background:#f5f5f5; border:2px solid #ccc; padding:10px; border-radius:4px; margin-bottom:14px; font-size:0.82rem;">
-                        <div style="display:flex; gap:8px; align-items:center; margin-bottom:5px;">
-                            <span>📎</span>
-                            <span style="color:#777; font-size:0.72rem; text-transform:uppercase;">File:</span>
-                            <span id="view-template-filename" style="font-family:monospace; font-weight:700; word-break:break-all;"></span>
-                        </div>
-                        <div style="display:flex; gap:8px; align-items:center;">
-                            <span>💾</span>
-                            <span style="color:#777; font-size:0.72rem; text-transform:uppercase;">Ukuran:</span>
-                            <span id="view-template-filesize" style="font-weight:700;">-</span>
-                        </div>
-                    </div>
-
-                    <!-- Buttons -->
-                    <div style="display:flex; gap:10px;">
-                        <a id="view-template-download" href="#" download="" class="btn btn-blue" style="flex:2; text-decoration:none; text-align:center; display:flex; align-items:center; justify-content:center; gap:6px;">⬇️ Unduh File</a>
-                        <button type="button" class="btn btn-yellow" id="btn-close-view-template" style="flex:1;">✕ Tutup</button>
-                    </div>
-                </div>
             </div>
         </div>
 
