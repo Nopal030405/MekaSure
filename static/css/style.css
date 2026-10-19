@@ -43,7 +43,7 @@ h1, h2, h3 {
 .neo-card {
     border: var(--border-width) solid var(--black);
     box-shadow: var(--shadow-offset) var(--shadow-offset) 0px var(--black);
-    border-radius: 0; /* Brutalism prefers sharp edges or very slight rounding */
+    border-radius: 0;
     transition: transform var(--transition-speed), box-shadow var(--transition-speed);
 }
 
@@ -81,6 +81,11 @@ h1, h2, h3 {
     color: var(--black);
 }
 
+.btn-cream {
+    background-color: var(--primary-cream);
+    color: var(--black);
+}
+
 .btn-large {
     padding: 15px 30px;
     font-size: 1.2rem;
@@ -96,6 +101,7 @@ h1, h2, h3 {
     padding: 15px 30px;
     background-color: var(--primary-blue);
     border-bottom: var(--border-width) solid var(--black);
+    gap: 10px;
 }
 
 .logo h1 {
@@ -112,6 +118,7 @@ h1, h2, h3 {
     list-style: none;
     display: flex;
     gap: 15px;
+    flex-wrap: wrap;
 }
 
 .nav-btn {
@@ -122,6 +129,7 @@ h1, h2, h3 {
     cursor: pointer;
     box-shadow: 3px 3px 0px var(--black);
     transition: all 0.1s;
+    position: relative;
 }
 
 .nav-btn.active {
@@ -132,6 +140,25 @@ h1, h2, h3 {
 
 .nav-btn:hover:not(.active) {
     background: var(--white);
+}
+
+/* Nav Pending Badge */
+.badge-nav {
+    display: inline-block;
+    background: #ff3b30;
+    color: white;
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 1px 5px;
+    border-radius: 50%;
+    border: 1px solid black;
+    vertical-align: middle;
+    animation: pulse-badge 1.5s infinite;
+}
+
+@keyframes pulse-badge {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
 }
 
 /* Main Container */
@@ -169,7 +196,7 @@ h1, h2, h3 {
     font-size: 1.1rem;
 }
 
-.form-group input, 
+.form-group input,
 .form-group select {
     width: 100%;
     padding: 12px;
@@ -185,7 +212,18 @@ h1, h2, h3 {
     box-shadow: 4px 4px 0px var(--primary-blue);
 }
 
-/* Result Modal/Box */
+/* Viewer Notice */
+.viewer-notice {
+    background: #fff3cd;
+    border: 3px solid #e6a817;
+    padding: 14px 16px;
+    margin-bottom: 20px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    box-shadow: 4px 4px 0px #e6a817;
+}
+
+/* Result Box */
 .result-box {
     margin-top: 30px;
     padding: 30px;
@@ -193,12 +231,13 @@ h1, h2, h3 {
 }
 
 .highlight-text {
-    font-size: 3rem;
+    font-size: 2.5rem;
     margin: 20px 0;
     background-color: var(--white);
     padding: 10px;
     border: var(--border-width) solid var(--black);
     display: inline-block;
+    word-break: break-all;
 }
 
 /* Table */
@@ -234,6 +273,99 @@ h1, h2, h3 {
     font-size: 1.2rem;
     border-top: var(--border-width) solid var(--black);
     background-color: var(--white);
+}
+
+/* ============================
+   TAB SWITCHER
+   ============================ */
+.tab-switcher {
+    display: flex;
+    gap: 0;
+    margin-bottom: 20px;
+    border: var(--border-width) solid var(--black);
+    box-shadow: 4px 4px 0px var(--black);
+    overflow: hidden;
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 12px 20px;
+    font-size: 1rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    cursor: pointer;
+    border: none;
+    border-right: var(--border-width) solid var(--black);
+    background: var(--primary-cream);
+    transition: all 0.1s;
+    position: relative;
+}
+
+.tab-btn:last-child {
+    border-right: none;
+}
+
+.tab-btn:hover:not(.active) {
+    background: var(--white);
+}
+
+.tab-btn.active {
+    background: var(--primary-yellow);
+}
+
+.tab-content {
+    display: block;
+}
+
+.tab-content.hidden {
+    display: none !important;
+}
+
+/* Pending Count Badge (inside tab button) */
+.badge-count {
+    display: inline-block;
+    background: #ff3b30;
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 700;
+    min-width: 20px;
+    height: 20px;
+    line-height: 20px;
+    text-align: center;
+    border-radius: 50%;
+    border: 1px solid black;
+    margin-left: 6px;
+    padding: 0 4px;
+}
+
+/* ============================
+   STATUS BADGES
+   ============================ */
+.status-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    border: 2px solid black;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 2px 2px 0px black;
+    white-space: nowrap;
+}
+
+.badge-pending {
+    background: #fff3cd;
+    color: #7a5c00;
+}
+
+.badge-approved {
+    background: #d4edda;
+    color: #155724;
+}
+
+.badge-rejected {
+    background: #f8d7da;
+    color: #721c24;
 }
 
 /* Template Cards */
@@ -292,7 +424,9 @@ h1, h2, h3 {
     overflow-y: auto;
 }
 
-/* Responsive */
+/* ============================
+   RESPONSIVE
+   ============================ */
 @media (max-width: 768px) {
     .navbar {
         flex-direction: column;
@@ -300,18 +434,18 @@ h1, h2, h3 {
         text-align: center;
         padding: 15px;
     }
-    
+
     .nav-links {
         flex-wrap: wrap;
         justify-content: center;
-        gap: 10px;
+        gap: 8px;
     }
 
     .nav-btn {
-        font-size: 0.9rem;
-        padding: 8px 12px;
+        font-size: 0.85rem;
+        padding: 7px 11px;
     }
-    
+
     .header-section {
         padding: 15px;
     }
@@ -332,17 +466,29 @@ h1, h2, h3 {
         font-size: 1rem;
         padding: 10px 20px;
     }
-    
+
     .highlight-text {
-        font-size: 1.4rem !important;
+        font-size: 1.3rem !important;
         padding: 15px 10px;
         margin: 15px 0;
-        word-break: break-all;
     }
 
     .neo-table th, .neo-table td {
         padding: 10px;
-        font-size: 0.9rem;
+        font-size: 0.85rem;
+    }
+
+    .tab-switcher {
+        flex-direction: column;
+    }
+
+    .tab-btn {
+        border-right: none;
+        border-bottom: var(--border-width) solid var(--black);
+    }
+
+    .tab-btn:last-child {
+        border-bottom: none;
     }
 
     footer > div {
@@ -355,13 +501,64 @@ h1, h2, h3 {
     .creator-info, .hima-info {
         width: 100%;
     }
-
-    #social-logos, #help-contacts-container {
-        justify-content: center !important;
-    }
 }
 
-/* Role Based Display */
+/* ============================
+   ROLE-BASED DISPLAY
+   ============================ */
 body.role-viewer .admin-only {
     display: none !important;
 }
+
+/* ============================
+   TOAST NOTIFICATION (Viewer Submit)
+   ============================ */
+.toast-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.55);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1100;
+}
+
+.toast-box {
+    background: var(--primary-cream);
+    padding: 28px 24px;
+    text-align: center;
+    width: 90%;
+    max-width: 360px;
+    animation: toast-pop 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes toast-pop {
+    from { transform: scale(0.75); opacity: 0; }
+    to   { transform: scale(1);    opacity: 1; }
+}
+
+.toast-icon {
+    font-size: 2.8rem;
+    margin-bottom: 10px;
+}
+
+.toast-box h3 {
+    font-size: 1.15rem;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+}
+
+/* Follow Up Button in Pending Table */
+.follow-up-btn {
+    display: inline-block;
+    padding: 6px 12px !important;
+    font-size: 0.8rem !important;
+    text-decoration: none;
+    text-transform: uppercase;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
