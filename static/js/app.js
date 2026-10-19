@@ -1,6 +1,11 @@
 // Role Management globally accessible
 let currentRole = localStorage.getItem('userRole') || 'viewer';
 
+let updateViewerNoticeGlobal = () => {};
+let updatePendingBadgeGlobal = () => {};
+let renderPendingTableGlobal = () => {};
+let filterTableGlobal = () => {};
+
 window.setRole = (role) => {
     currentRole = role;
     localStorage.setItem('userRole', role);
@@ -8,6 +13,11 @@ window.setRole = (role) => {
     const display = document.getElementById('current-role-display');
     if(display) display.textContent = `Anda masuk sebagai: ${role.toUpperCase()}`;
     
+    updateViewerNoticeGlobal();
+    filterTableGlobal();
+    renderPendingTableGlobal();
+    updatePendingBadgeGlobal();
+
     // Switch to ambil nomor section
     const btnAmbil = document.querySelector('[data-target="ambil-nomor"]');
     if (btnAmbil) btnAmbil.click();
@@ -24,22 +34,43 @@ document.addEventListener('DOMContentLoaded', () => {
     const display = document.getElementById('current-role-display');
     if(display) display.textContent = `Anda masuk sebagai: ${currentRole.toUpperCase()}`;
 
+    // === Helper: Viewer Notice & Button Text ===
+    const updateViewerNotice = () => {
+        const notice = document.getElementById('viewer-notice');
+        const btnGenerate = document.getElementById('btn-generate');
+        if (!notice) return;
+        if (currentRole === 'viewer') {
+            notice.classList.remove('hidden');
+            if (btnGenerate) btnGenerate.textContent = '📨 Kirim Permintaan Nomor Surat';
+        } else {
+            notice.classList.add('hidden');
+            if (btnGenerate) btnGenerate.textContent = 'Generate Nomor Surat';
+        }
+    };
+    updateViewerNoticeGlobal = updateViewerNotice;
+
     // === Navigation Logic ===
     const navBtns = document.querySelectorAll('.nav-btn');
     const sections = document.querySelectorAll('.section');
 
     navBtns.forEach(btn => {
         btn.addEventListener('click', () => {
-            // Remove active class from all buttons and sections
             navBtns.forEach(b => b.classList.remove('active'));
             sections.forEach(s => s.classList.add('hidden'));
 
-            // Add active class to clicked button and target section
             btn.classList.add('active');
             const targetId = btn.getAttribute('data-target');
-            document.getElementById(targetId).classList.remove('hidden');
+            const targetEl = document.getElementById(targetId);
+            if (targetEl) targetEl.classList.remove('hidden');
 
-            // Munculkan popup peringatan KOP otomatis ketika layer Template Surat dibuka
+            if (targetId === 'rekap-surat') {
+                filterTable();
+                renderPendingTable();
+                updatePendingBadge();
+            }
+            if (targetId === 'ambil-nomor') {
+                updateViewerNotice();
+            }
             if (targetId === 'template-surat') {
                 showKopWarningModal();
             }
@@ -102,44 +133,81 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // === Form & Surat Logic ===
-    const formSurat = document.getElementById('form-surat');
-    const resultModal = document.getElementById('result-modal');
-    const generatedNumberEl = document.getElementById('generated-number');
-    const btnCloseResult = document.getElementById('btn-close-result');
+    // =========================================
+    // TAB SWITCHER: REKAP SURAT
+    // =========================================
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    tabBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const targetTab = btn.getAttribute('data-tab');
+            tabBtns.forEach(b => b.classList.remove('active'));
+            tabContents.forEach(tc => tc.classList.add('hidden'));
+
+            btn.classList.add('active');
+            const targetEl = document.getElementById(targetTab);
+            if (targetEl) targetEl.classList.remove('hidden');
+
+            if (targetTab === 'tab-pending') renderPendingTable();
+            if (targetTab === 'tab-semua') filterTable();
+        });
+    });
+
+    // =========================================
+    // DATA & TABLES
+    // =========================================
+    let suratData = [];
+    let pendingData = [];
+
     const tableBody = document.querySelector('#table-rekap tbody');
     const emptyState = document.getElementById('empty-state');
     const searchInput = document.getElementById('search-input');
     const filterJenis = document.getElementById('filter-jenis');
 
-    // Edit Modal Elements
-    const editModal = document.getElementById('edit-modal');
-    const formEditSurat = document.getElementById('form-edit-surat');
-    const btnCancelEdit = document.getElementById('btn-cancel-edit');
+    const pendingTableBody = document.querySelector('#table-pending tbody');
+    const emptyStatePending = document.getElementById('empty-state-pending');
 
-    // Initialize backend-driven data array
-    let suratData = [];
+    const updatePendingBadge = () => {
+        const count = pendingData.filter(p => p.status === 'pending').length;
+        const badge = document.getElementById('pending-badge');
+        if (badge) {
+            badge.textContent = count;
+            count > 0 ? badge.classList.remove('hidden') : badge.classList.add('hidden');
+        }
+        const badgeNav = document.getElementById('pending-badge-nav');
+        if (badgeNav) {
+            count > 0 ? badgeNav.classList.remove('hidden') : badgeNav.classList.add('hidden');
+        }
+    };
+    updatePendingBadgeGlobal = updatePendingBadge;
 
     // Load Letters from Server
     const loadLetters = async () => {
         try {
             const res = await fetch('/api/letters');
-            suratData = await res.json();
+            const allLetters = await res.json();
+            // Separate approved vs pending/rejected
+            suratData = allLetters.filter(l => l.status === 'approved' || (!l.status && l.nomor && !l.nomor.startsWith('REQ-')));
+            pendingData = allLetters.filter(l => l.status === 'pending' || l.status === 'rejected' || (l.nomor && l.nomor.startsWith('REQ-')));
             filterTable();
+            renderPendingTable();
+            updatePendingBadge();
         } catch (err) {
             console.error("Gagal memuat data surat dari server:", err);
         }
     };
 
-    // Helper: Render Table
+    // Render Table: Semua Surat (Approved)
     const renderTable = (dataToRender = suratData) => {
+        if (!tableBody) return;
         tableBody.innerHTML = '';
         if (dataToRender.length === 0) {
-            emptyState.classList.remove('hidden');
+            if (emptyState) emptyState.classList.remove('hidden');
         } else {
-            emptyState.classList.add('hidden');
+            if (emptyState) emptyState.classList.add('hidden');
             dataToRender.forEach((surat) => {
-                const kepanitiaanDisplay = surat.isKepanitiaan ? surat.namaKegiatan : '-';
+                const kepanitiaanDisplay = surat.isKepanitiaan ? (surat.namaKegiatan || '✓') : '-';
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td><strong>${surat.nomor}</strong></td>
@@ -148,6 +216,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <td>${kepanitiaanDisplay}</td>
                     <td>${surat.tujuan}</td>
                     <td>${surat.perihal}</td>
+                    <td><span class="status-badge badge-approved" style="background:#d4edda; color:#155724; border:2px solid #155724; padding:3px 8px; font-weight:700; font-size:0.75rem; border-radius:3px;">✅ DISETUJUI</span></td>
                     <td class="admin-only">
                         <div style="display: flex; gap: 5px;">
                             <button class="btn btn-blue" style="padding: 5px 10px; font-size: 0.8rem;" onclick="editSurat(${surat.id})">Edit</button>
@@ -162,20 +231,129 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Filter and Search Logic
     const filterTable = () => {
-        const searchTerm = searchInput.value.toLowerCase();
-        const filterVal = filterJenis.value;
+        const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
+        const filterVal = filterJenis ? filterJenis.value : '';
 
         const filteredData = suratData.filter(surat => {
-            const matchSearch = surat.perihal.toLowerCase().includes(searchTerm) || surat.tujuan.toLowerCase().includes(searchTerm);
+            const matchSearch = (surat.perihal || '').toLowerCase().includes(searchTerm) || (surat.tujuan || '').toLowerCase().includes(searchTerm);
             const matchFilter = filterVal === "" || surat.jenis === filterVal;
             return matchSearch && matchFilter;
         });
 
         renderTable(filteredData);
     };
+    filterTableGlobal = filterTable;
 
     if (searchInput) searchInput.addEventListener('input', filterTable);
     if (filterJenis) filterJenis.addEventListener('change', filterTable);
+
+    // Render Table: Menunggu Persetujuan
+    const renderPendingTable = () => {
+        if (!pendingTableBody) return;
+        pendingTableBody.innerHTML = '';
+
+        if (pendingData.length === 0) {
+            if (emptyStatePending) emptyStatePending.classList.remove('hidden');
+            updatePendingBadge();
+            return;
+        }
+
+        if (emptyStatePending) emptyStatePending.classList.add('hidden');
+
+        pendingData.forEach((surat) => {
+            const kepanitiaanDisplay = surat.isKepanitiaan ? (surat.namaKegiatan || '✓') : '-';
+
+            let statusBadge = '';
+            let followUpBtn = '';
+            if (surat.status === 'pending') {
+                statusBadge = '<span class="status-badge badge-pending" style="background:#fff3cd; color:#856404; border:2px solid #856404; padding:3px 8px; font-weight:700; font-size:0.75rem; border-radius:3px;">⏳ MENUNGGU</span>';
+                const adminPhone = (contactsData[0]?.phone || '').replace(/^0/, '62');
+                if (adminPhone) {
+                    const msg = encodeURIComponent(
+                        `Halo Admin MEKASUR,\n\nSaya ingin menindaklanjuti permintaan nomor surat saya:\n\n` +
+                        `📅 Tanggal   : ${surat.tanggal}\n` +
+                        `📄 Jenis     : ${surat.jenis}\n` +
+                        `🎯 Tujuan    : ${surat.tujuan}\n` +
+                        `📝 Perihal   : ${surat.perihal}\n\n` +
+                        `Mohon kiranya dapat segera disetujui. Terima kasih! 🙏`
+                    );
+                    followUpBtn = `<a href="https://wa.me/${adminPhone}?text=${msg}" target="_blank"
+                        style="display:inline-block; margin-top:5px; background:#25d366; color:white; padding:3px 8px; border-radius:3px; font-size:0.75rem; text-decoration:none; font-weight:bold; border:1px solid #128c7e;">
+                        💬 Hubungi Admin
+                    </a>`;
+                }
+            } else if (surat.status === 'approved') {
+                statusBadge = `<span class="status-badge badge-approved" style="background:#d4edda; color:#155724; border:2px solid #155724; padding:3px 8px; font-weight:700; font-size:0.75rem; border-radius:3px;">✅ DISETUJUI: <strong>${surat.nomor}</strong></span>`;
+            } else if (surat.status === 'rejected') {
+                statusBadge = '<span class="status-badge badge-rejected" style="background:#f8d7da; color:#721c24; border:2px solid #721c24; padding:3px 8px; font-weight:700; font-size:0.75rem; border-radius:3px;">❌ DITOLAK</span>';
+            }
+
+            let actionCell = '<span style="font-size:0.8rem; color:#777;">Selesai</span>';
+            if (surat.status === 'pending') {
+                actionCell = `
+                    <div style="display:flex; gap:5px; flex-wrap:wrap;">
+                        <button class="btn btn-blue" style="padding:5px 10px; font-size:0.8rem;" onclick="approveSurat(${surat.id})">✅ Setujui</button>
+                        <button class="btn btn-yellow" style="padding:5px 10px; font-size:0.8rem;" onclick="rejectSurat(${surat.id})">❌ Tolak</button>
+                    </div>
+                `;
+            }
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${surat.tanggal}</td>
+                <td>${surat.lingkup || '-'}</td>
+                <td>${surat.jenis}</td>
+                <td>${kepanitiaanDisplay}</td>
+                <td>${surat.tujuan}</td>
+                <td>${surat.perihal}</td>
+                <td>
+                    ${statusBadge}
+                    ${followUpBtn ? `<div>${followUpBtn}</div>` : ''}
+                </td>
+                <td class="admin-only">${actionCell}</td>
+            `;
+            pendingTableBody.appendChild(tr);
+        });
+
+        updatePendingBadge();
+    };
+    renderPendingTableGlobal = renderPendingTable;
+
+    // === Approve & Reject Surat ===
+    window.approveSurat = async (id) => {
+        if (currentRole !== 'admin') return;
+        try {
+            const res = await fetch(`/api/letters/${id}/approve`, { method: 'POST' });
+            const result = await res.json();
+            if (result.success) {
+                alert(`✅ Permintaan nomor surat berhasil disetujui!\n\nNomor: ${result.nomor}`);
+                await loadLetters();
+            } else {
+                alert(result.message || 'Gagal menyetujui surat!');
+            }
+        } catch (err) {
+            console.error('Gagal approve surat:', err);
+            alert('Terjadi kesalahan jaringan!');
+        }
+    };
+
+    window.rejectSurat = async (id) => {
+        if (currentRole !== 'admin') return;
+        if (!confirm('Apakah Anda yakin ingin MENOLAK permintaan nomor surat ini?')) return;
+        try {
+            const res = await fetch(`/api/letters/${id}/reject`, { method: 'POST' });
+            const result = await res.json();
+            if (result.success) {
+                alert('Permintaan nomor surat telah ditolak.');
+                await loadLetters();
+            } else {
+                alert(result.message || 'Gagal menolak surat!');
+            }
+        } catch (err) {
+            console.error('Gagal reject surat:', err);
+            alert('Terjadi kesalahan jaringan!');
+        }
+    };
 
     // Handle Delete Surat
     window.hapusSurat = async (id) => {
@@ -195,6 +373,10 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // Handle Edit Surat Modal Popup
+    const editModal = document.getElementById('edit-modal');
+    const formEditSurat = document.getElementById('form-edit-surat');
+    const btnCancelEdit = document.getElementById('btn-cancel-edit');
+
     window.editSurat = (id) => {
         const surat = suratData.find(s => s.id === id);
         if (!surat) return;
@@ -210,11 +392,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (btnCancelEdit) {
         btnCancelEdit.addEventListener('click', () => {
-            editModal.classList.add('hidden');
+            if (editModal) editModal.classList.add('hidden');
         });
     }
 
-    // Submit Edit Surat
     if (formEditSurat) {
         formEditSurat.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -231,7 +412,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 const result = await res.json();
                 if (result.success) {
-                    editModal.classList.add('hidden');
+                    if (editModal) editModal.classList.add('hidden');
                     await loadLetters();
                 } else {
                     alert("Gagal mengupdate data!");
@@ -242,7 +423,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Handle Checkbox Kepanitiaan Toggle
+    // === Form & Ambil Nomor Surat Logic ===
+    const formSurat = document.getElementById('form-surat');
+    const resultModal = document.getElementById('result-modal');
+    const generatedNumberEl = document.getElementById('generated-number');
+    const btnCloseResult = document.getElementById('btn-close-result');
     const isKepanitiaanCb = document.getElementById('is-kepanitiaan');
     const kegiatanGroup = document.getElementById('kegiatan-group');
     const namaKegiatanInput = document.getElementById('nama-kegiatan');
@@ -260,54 +445,71 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Handle Form Submit (Generate Letter)
-    formSurat.addEventListener('submit', async (e) => {
-        e.preventDefault();
+    if (formSurat) {
+        formSurat.addEventListener('submit', async (e) => {
+            e.preventDefault();
 
-        const tanggal = document.getElementById('tanggal').value;
-        const lingkup = document.getElementById('lingkup').value;
-        const jenis = document.getElementById('jenis').value;
-        const tujuan = document.getElementById('tujuan').value;
-        const perihal = document.getElementById('perihal').value;
-        
-        const isKepanitiaan = isKepanitiaanCb ? isKepanitiaanCb.checked : false;
-        const namaKegiatan = namaKegiatanInput ? namaKegiatanInput.value : '';
+            const tanggal = document.getElementById('tanggal').value;
+            const lingkup = document.getElementById('lingkup').value;
+            const jenis = document.getElementById('jenis').value;
+            const tujuan = document.getElementById('tujuan').value;
+            const perihal = document.getElementById('perihal').value;
+            
+            const isKepanitiaan = isKepanitiaanCb ? isKepanitiaanCb.checked : false;
+            const namaKegiatan = namaKegiatanInput ? namaKegiatanInput.value : '';
+            const status = (currentRole === 'admin') ? 'approved' : 'pending';
 
-        try {
-            const res = await fetch('/api/letters', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    tanggal, lingkup, jenis, isKepanitiaan, namaKegiatan, tujuan, perihal
-                })
-            });
-            const result = await res.json();
-            if (result.success) {
-                // Show result
-                generatedNumberEl.textContent = result.nomor;
-                resultModal.classList.remove('hidden');
-                
-                // Reset form
-                formSurat.reset();
-                if(isKepanitiaanCb) {
-                    kegiatanGroup.classList.add('hidden');
-                    namaKegiatanInput.removeAttribute('required');
+            try {
+                const res = await fetch('/api/letters', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        tanggal, lingkup, jenis, isKepanitiaan, namaKegiatan, tujuan, perihal, status
+                    })
+                });
+                const result = await res.json();
+                if (result.success) {
+                    formSurat.reset();
+                    if(isKepanitiaanCb) {
+                        kegiatanGroup.classList.add('hidden');
+                        namaKegiatanInput.removeAttribute('required');
+                    }
+
+                    if (currentRole === 'admin') {
+                        // Admin: langsung tampilkan nomor resmi
+                        if (generatedNumberEl) generatedNumberEl.textContent = result.nomor;
+                        if (resultModal) resultModal.classList.remove('hidden');
+                    } else {
+                        // Viewer: tampilkan modal toast permintaan terkirim
+                        const toastDetail = document.getElementById('toast-detail');
+                        if (toastDetail) {
+                            toastDetail.innerHTML = `
+                                <div><strong>Jenis:</strong> ${jenis}</div>
+                                <div><strong>Tujuan:</strong> ${tujuan}</div>
+                                <div><strong>Perihal:</strong> ${perihal}</div>
+                                <div><strong>Tanggal:</strong> ${tanggal}</div>
+                            `;
+                        }
+                        const toast = document.getElementById('submit-toast');
+                        if (toast) toast.classList.remove('hidden');
+                    }
+
+                    await loadLetters();
+                } else {
+                    alert(result.message || "Gagal membuat nomor surat!");
                 }
-
-                // Update table
-                await loadLetters();
-            } else {
-                alert(result.message || "Gagal membuat nomor surat!");
+            } catch (err) {
+                console.error("Gagal membuat nomor surat:", err);
+                alert("Terjadi kesalahan jaringan!");
             }
-        } catch (err) {
-            console.error("Gagal membuat nomor surat:", err);
-            alert("Terjadi kesalahan jaringan!");
-        }
-    });
+        });
+    }
 
-    btnCloseResult.addEventListener('click', () => {
-        resultModal.classList.add('hidden');
-    });
+    if (btnCloseResult) {
+        btnCloseResult.addEventListener('click', () => {
+            if (resultModal) resultModal.classList.add('hidden');
+        });
+    }
 
     const btnCopyResult = document.getElementById('btn-copy-result');
     if (btnCopyResult) {
@@ -323,7 +525,22 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // === Template Logic ===
+    // Toast helper
+    window.closeToast = (e) => {
+        if (!e || e.target.id === 'submit-toast' || e.target.id === 'btn-close-toast') {
+            const toast = document.getElementById('submit-toast');
+            if (toast) toast.classList.add('hidden');
+        }
+    };
+    const btnCloseToast = document.getElementById('btn-close-toast');
+    if (btnCloseToast) {
+        btnCloseToast.addEventListener('click', () => {
+            const toast = document.getElementById('submit-toast');
+            if (toast) toast.classList.add('hidden');
+        });
+    }
+
+    // === Template Logic (from Backend API /api/templates) ===
     const templateContainer = document.getElementById('template-container');
     const btnTambahTemplate = document.getElementById('btn-tambah-template');
     const templateModal = document.getElementById('template-modal');
@@ -332,7 +549,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let templateData = [];
 
-    // Load Templates from Server
     const loadTemplates = async () => {
         try {
             const res = await fetch('/api/templates');
@@ -366,7 +582,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    // Handle Delete Template
     window.hapusTemplate = async (id) => {
         if(confirm("Apakah Anda yakin ingin menghapus template ini?")) {
             try {
@@ -385,17 +600,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (btnTambahTemplate) {
         btnTambahTemplate.addEventListener('click', () => {
-            templateModal.classList.remove('hidden');
+            if (templateModal) templateModal.classList.remove('hidden');
         });
     }
 
     if (btnCancelTemplate) {
         btnCancelTemplate.addEventListener('click', () => {
-            templateModal.classList.add('hidden');
+            if (templateModal) templateModal.classList.add('hidden');
         });
     }
 
-    // Submit / Upload New Template File
     if (formTambahTemplate) {
         formTambahTemplate.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -413,12 +627,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 try {
                     const res = await fetch('/api/templates', {
                         method: 'POST',
-                        body: formData // Sends multipart form natively
+                        body: formData
                     });
                     const result = await res.json();
                     if (result.success) {
                         formTambahTemplate.reset();
-                        templateModal.classList.add('hidden');
+                        if (templateModal) templateModal.classList.add('hidden');
                         await loadTemplates();
                     } else {
                         alert(result.message || "Gagal mengunggah template!");
@@ -438,7 +652,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (btnCancelLogin) {
         btnCancelLogin.addEventListener('click', () => {
-            adminLoginModal.classList.add('hidden');
+            if (adminLoginModal) adminLoginModal.classList.add('hidden');
         });
     }
 
@@ -457,7 +671,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const result = await res.json();
                 if (result.success) {
                     setRole('admin');
-                    adminLoginModal.classList.add('hidden');
+                    if (adminLoginModal) adminLoginModal.classList.add('hidden');
                     adminLoginForm.reset();
                 } else {
                     alert(result.message || 'Username atau Password salah!');
@@ -478,7 +692,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let contactsData = [];
 
-    // Load Help Contacts from Server
     const loadContacts = async () => {
         try {
             const res = await fetch('/api/contacts');
@@ -502,13 +715,11 @@ document.addEventListener('DOMContentLoaded', () => {
             link.style.textDecoration = 'none';
             link.style.color = 'white';
             
-            // Image icon
             const img = document.createElement('img');
             img.src = `/static/assets/${index+1}.png`; 
             img.alt = `WA ${contact.name}`;
             img.style.cssText = 'width: 50px; height: 50px; object-fit: cover; border-radius: 50%; border: 2px solid white; display: block; margin: 0 auto 5px;';
             
-            // Name span
             const span = document.createElement('span');
             span.style.fontSize = '0.9rem';
             span.style.fontWeight = 'bold';
@@ -526,13 +737,13 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('contact1-phone').value = contactsData[0]?.phone || '';
             document.getElementById('contact2-name').value = contactsData[1]?.name || '';
             document.getElementById('contact2-phone').value = contactsData[1]?.phone || '';
-            contactSettingsModal.classList.remove('hidden');
+            if (contactSettingsModal) contactSettingsModal.classList.remove('hidden');
         });
     }
 
     if (btnCancelContact) {
         btnCancelContact.addEventListener('click', () => {
-            contactSettingsModal.classList.add('hidden');
+            if (contactSettingsModal) contactSettingsModal.classList.add('hidden');
         });
     }
 
@@ -557,7 +768,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 const result = await res.json();
                 if (result.success) {
-                    contactSettingsModal.classList.add('hidden');
+                    if (contactSettingsModal) contactSettingsModal.classList.add('hidden');
                     await loadContacts();
                 } else {
                     alert("Gagal menyimpan kontak!");
@@ -568,8 +779,20 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // === Logout Logic ===
+    const btnLogout = document.getElementById('btn-logout');
+    if (btnLogout) {
+        btnLogout.addEventListener('click', () => {
+            if (confirm('Apakah Anda yakin ingin logout dari akun Admin?')) {
+                setRole('viewer');
+                fetch('/api/logout', { method: 'POST' }).catch(() => {});
+            }
+        });
+    }
+
     // Initial load from Backend APIs
     loadLetters();
     loadTemplates();
     loadContacts();
+    updateViewerNotice();
 });

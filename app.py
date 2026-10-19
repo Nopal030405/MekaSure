@@ -72,9 +72,20 @@ def create_letter():
     if not (tanggal and lingkup and jenis and tujuan and perihal):
         return jsonify({"success": False, "message": "Semua field wajib diisi!"}), 400
 
+    status = data.get('status', 'approved')
+
+    if status == 'pending':
+        nomor = f"REQ-{datetime.now().strftime('%Y%m%d%H%M%S')}"
+        query_db(
+            "INSERT INTO letters (nomor, tanggal, lingkup, jenis, isKepanitiaan, namaKegiatan, tujuan, perihal, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (nomor, tanggal, lingkup, jenis, 1 if isKepanitiaan else 0, namaKegiatan, tujuan, perihal, 'pending'),
+            commit=True
+        )
+        return jsonify({"success": True, "status": "pending", "nomor": nomor})
+
     # Dynamic Sequential Number Generation (concurrency-safe)
-    count_row = query_db("SELECT COUNT(id) AS count FROM letters", one=True)
-    count = count_row['count'] + 1
+    count_row = query_db("SELECT COUNT(id) AS count FROM letters WHERE status = 'approved' OR status IS NULL", one=True)
+    count = (count_row['count'] if count_row else 0) + 1
     paddedCount = str(count).zfill(3)
 
     # Date calculations
@@ -96,16 +107,50 @@ def create_letter():
 
     # Save to Database
     query_db(
-        "INSERT INTO letters (nomor, tanggal, lingkup, jenis, isKepanitiaan, namaKegiatan, tujuan, perihal) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-        (nomor, tanggal, lingkup, jenis, 1 if isKepanitiaan else 0, namaKegiatan, tujuan, perihal),
+        "INSERT INTO letters (nomor, tanggal, lingkup, jenis, isKepanitiaan, namaKegiatan, tujuan, perihal, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        (nomor, tanggal, lingkup, jenis, 1 if isKepanitiaan else 0, namaKegiatan, tujuan, perihal, 'approved'),
         commit=True
     )
 
+    return jsonify({"success": True, "status": "approved", "nomor": nomor})
+
+@app.route('/api/letters/<int:letter_id>/approve', methods=['POST', 'PUT'])
+def approve_letter(letter_id):
+    letter = query_db("SELECT * FROM letters WHERE id = ?", (letter_id,), one=True)
+    if not letter:
+        return jsonify({"success": False, "message": "Surat tidak ditemukan"}), 404
+
+    count_row = query_db("SELECT COUNT(id) AS count FROM letters WHERE status = 'approved' OR status IS NULL", one=True)
+    count = (count_row['count'] if count_row else 0) + 1
+    paddedCount = str(count).zfill(3)
+
+    date_obj = datetime.strptime(letter['tanggal'], "%Y-%m-%d")
+    year = date_obj.year
+    month = date_obj.month
+    romawi_months = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII"]
+    romawi = romawi_months[month - 1]
+
+    panpel_part = ""
+    if letter['isKepanitiaan'] and letter['namaKegiatan']:
+        cleaned_nama = "".join(letter['namaKegiatan'].split())
+        panpel_part = f"/Panpel{cleaned_nama}"
+
+    nomor = f"{paddedCount}/{letter['lingkup']}/{letter['jenis']}{panpel_part}/HIMAMEKA/KM-UTM/{romawi}/{year}"
+
+    query_db(
+        "UPDATE letters SET nomor = ?, status = 'approved' WHERE id = ?",
+        (nomor, letter_id),
+        commit=True
+    )
     return jsonify({"success": True, "nomor": nomor})
+
+@app.route('/api/letters/<int:letter_id>/reject', methods=['POST', 'PUT'])
+def reject_letter(letter_id):
+    query_db("UPDATE letters SET status = 'rejected' WHERE id = ?", (letter_id,), commit=True)
+    return jsonify({"success": True})
 
 @app.route('/api/letters/<int:letter_id>', methods=['PUT'])
 def update_letter(letter_id):
-    # Standard security check can be enforced here, e.g., session.get('user_role') == 'admin'
     data = request.get_json() or {}
     tanggal = data.get('tanggal')
     tujuan = data.get('tujuan')

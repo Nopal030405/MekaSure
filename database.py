@@ -140,6 +140,12 @@ def init_db():
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
             ''')
         
+        # Ensure status column exists in letters table
+        try:
+            cursor.execute("ALTER TABLE letters ADD COLUMN status TEXT DEFAULT 'approved'")
+        except Exception:
+            pass
+
         conn.commit()
     finally:
         cursor.close()
